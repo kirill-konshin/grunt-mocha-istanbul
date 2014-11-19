@@ -12,8 +12,16 @@ Install
 ==============
 
 1. Install it using `npm install grunt-mocha-istanbul --save-dev`
-2. It needs `mocha` and `grunt` to be installed locally on your project (aka, having them in your devDependencies)
+2. It needs `mocha`, `grunt` and `istanbul` to be installed locally on your project (aka, having them in your devDependencies)
 3. Call inside Gruntfile.js `grunt.loadNpmTasks('grunt-mocha-istanbul')`
+
+Changes from 1.x
+==============
+
+Since Istanbul has 2 versions (ES5 and ES6/harmony), it's up to you to install the desired version of Istanbul, 
+it's now defined as a a peer dependency.
+
+Introduced new task `istanbul_check_coverage` to enable coverage checking on more than one test run. See below for example. 
 
 Changes from 0.2.0
 ==============
@@ -32,13 +40,20 @@ module.exports = function(grunt){
     grunt.initConfig({
         mocha_istanbul: {
             coverage: {
-                src: 'test', // the folder, not the files,
+                src: 'test', // a folder works nicely
                 options: {
                     mask: '*.spec.js'
                 }
             },
+            coverageSpecial: {
+                src: ['testSpecial/*/*.js', 'testUnique/*/*.js'], // specifying file patterns works as well
+                options: {
+                    coverageFolder: 'coverageSpecial',
+                    mask: '*.spec.js'
+                }
+            },
             coveralls: {
-                src: 'test', // the folder, not the files
+                src: ['test', 'testSpecial', 'testUnique'], // multiple folders also works
                 options: {
                     coverage:true,
                     check: {
@@ -49,7 +64,19 @@ module.exports = function(grunt){
                     reportFormats: ['cobertura','lcovonly']
                 }
             }
+        },
+        istanbul_check_coverage: {
+          default: {
+            options: {
+              coverageFolder: 'coverage*', // will check both coverage folders and merge the coverage results
+              check: {
+                lines: 80,
+                statements: 80
+              }
+            }
+          }
         }
+
     });
 
     grunt.event.on('coverage', function(lcovFileContents, done){
@@ -64,7 +91,7 @@ module.exports = function(grunt){
 };
 ```
 
-If there's a `mocha.opts` file inside the `src`, it will warn if you are overwritting any options.
+If there's a `mocha.opts` file inside the first `src` folder or file defined, it will warn if you are overwriting any options.
 
 Coverage is written to `coverage` folder by default, in the same level as the `Gruntfile.js`
 
@@ -109,7 +136,7 @@ Setting this exclude files from coverage report, check `istanbul help cover`. Yo
 
 ##### _String_ `options.mask` (default: `false`)
 
-The mask for the tests to be ran. By default, mocha will execute the `test` folder and all test files
+The mask for the tests to be ran. By default, mocha will execute the `test` folder and all test files. Will override any files specified in `src` and instead use the mask on those files' folders.
 
 ##### _Boolean_ `options.quiet` (default: `false`)
 
